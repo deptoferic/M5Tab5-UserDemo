@@ -9,9 +9,16 @@
 #include <memory>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "link/link_tab5.h"
 
 extern "C" void app_main(void)
 {
+    // Tab5 Sensor Hub, Phase 1c: bring the Schema A link up before the UI.
+    // It runs in its own task and writes app/link/link_state.h; nothing here
+    // renders it. Per that project's CLAUDE.md §6, rendering READS that state
+    // and never touches this transport.
+    link_tab5_start();
+
     // 应用层初始化回调
     app::InitCallback_t callback;
 
