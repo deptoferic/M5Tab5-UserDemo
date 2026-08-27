@@ -246,6 +246,18 @@ void HalEsp32::clearRtcIrq()
     rx8130.disableIrq();
 }
 
+/* Upstream declares getRtcTime() on HalBase but never overrides it here, so the
+ * base no-op runs and callers silently receive an untouched struct. Reading the
+ * RTC back after setting it is the only way to know a write took, so implement
+ * it. */
+void HalEsp32::getRtcTime(tm* time)
+{
+    if (time == nullptr) {
+        return;
+    }
+    rx8130.getTime(time);
+}
+
 void HalEsp32::setRtcTime(tm time)
 {
     mclog::tagInfo(_tag, "set rtc time to {}/{}/{} {:02d}:{:02d}:{:02d}", time.tm_year + 1900, time.tm_mon + 1,

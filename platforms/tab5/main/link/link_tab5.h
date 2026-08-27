@@ -16,6 +16,14 @@ extern "C" {
 /* Brings up UART1 and starts the link task. Safe to call once, from app_main. */
 void link_tab5_start(void);
 
+/* Force a fresh hello, re-deriving the monotonic->wall-clock anchor.
+ *
+ * The anchor is computed once at hello from OUR clock. If our clock then jumps
+ * — an RTC being set, an NTP step — the anchor is stale and every mapped
+ * timestamp is wrong by the size of the jump, silently. Call this after any
+ * deliberate change to the system clock. */
+void link_tab5_resync_clock(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -47,6 +47,7 @@ static const char *TAG = "link";
 static uint32_t s_seq_next = LINK_SEQ_FIRST;
 static uint32_t s_hello_seq;
 static int64_t  s_hello_sent_ms;
+static volatile bool s_want_rehello;
 
 static int64_t wall_ms(void)
 {
@@ -243,6 +244,13 @@ static void handle_line(const char *line, size_t len)
     cJSON_Delete(root);
 }
 
+void link_tab5_resync_clock(void)
+{
+    /* Flag rather than calling send_hello() directly: the link task owns the
+     * UART, and two tasks writing frames could interleave bytes mid-line. */
+    s_want_rehello = true;
+}
+
 /* THE INVARIANT (docs/schema_a.md §3): always either accumulating a line or
  * discarding to the next newline. Never parsing a fragment. */
 static void link_rx_task(void *arg)
@@ -276,6 +284,15 @@ static void link_rx_task(void *arg)
                 continue;
             }
             line[len++] = (char)b;
+        }
+
+        if (s_want_rehello) {
+            s_want_rehello = false;
+            ESP_LOGI(TAG, "clock changed — re-deriving the wall-clock anchor");
+            link_state_t *st = link_state_begin_write();
+            st->sat_boot_wall_ms = 0;
+            link_state_end_write();
+            send_hello();
         }
 
         /* hello retry / timeout */

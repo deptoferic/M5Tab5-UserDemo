@@ -40,6 +40,7 @@ public:
 
     void clearRtcIrq() override;
     void setRtcTime(tm time) override;
+    void getRtcTime(tm* time) override;
 
     void setChargeQcEnable(bool enable) override;
     bool getChargeQcEnable() override;
