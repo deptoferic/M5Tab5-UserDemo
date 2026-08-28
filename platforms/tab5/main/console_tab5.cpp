@@ -11,6 +11,7 @@
  */
 
 #include <string.h>
+#include "sensor_net/sensor_net.h"
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
@@ -138,6 +139,8 @@ extern "C" void console_tab5_start(void)
     const esp_console_cmd_t c_link = { "link", "Link state, read through the §6 seam", nullptr, &cmd_link, nullptr, nullptr };
     esp_console_cmd_register(&c_link);
 
+    sensor_net_register_console();
+
     esp_console_start_repl(repl);
-    ESP_LOGI(TAG, "READY|console=usb_serial_jtag cmds=rtc,rtcset,link");
+    ESP_LOGI(TAG, "READY|console=usb_serial_jtag cmds=rtc,rtcset,link,nodes,net");
 }
