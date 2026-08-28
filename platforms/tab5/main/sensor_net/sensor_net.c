@@ -53,6 +53,7 @@ static esp_err_t reading_post(httpd_req_t *req)
     const cJSON *jseq  = cJSON_GetObjectItem(root, "seq");
     const cJSON *jup   = cJSON_GetObjectItem(root, "uptime_ms");
     const cJSON *jok   = cJSON_GetObjectItem(root, "ok");
+    const cJSON *jwhy  = cJSON_GetObjectItem(root, "why");
 
     if (!cJSON_IsString(jid) || !cJSON_IsNumber(jtemp)) {
         cJSON_Delete(root);
@@ -65,7 +66,8 @@ static esp_err_t reading_post(httpd_req_t *req)
                                 cJSON_IsBool(jok) ? cJSON_IsTrue(jok) : true,
                                 cJSON_IsNumber(jseq) ? (uint32_t)jseq->valuedouble : 0,
                                 cJSON_IsNumber(jup)  ? (uint32_t)jup->valuedouble  : 0,
-                                now_ms());
+                                now_ms(),
+                                cJSON_IsString(jwhy) && strcmp(jwhy->valuestring, "threshold") == 0);
     cJSON_Delete(root);
 
     if (!ok) { httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "table full"); return ESP_FAIL; }
@@ -90,9 +92,10 @@ static esp_err_t nodes_get(httpd_req_t *req)
         if (!e->used) { continue; }
         w += snprintf(buf + w, sizeof(buf) - w,
                       "%s{\"id\":\"%s\",\"temp_c\":%.2f,\"valid\":%s,\"seq\":%u,"
-                      "\"rx\":%u,\"gaps\":%u,\"age_ms\":%lld,\"stale\":%s}",
+                      "\"rx\":%u,\"gaps\":%u,\"timer\":%u,\"event\":%u,\"age_ms\":%lld,\"stale\":%s}",
                       first ? "" : ",", e->id, e->temp_c, e->temp_valid ? "true" : "false",
                       (unsigned)e->node_seq, (unsigned)e->rx_count, (unsigned)e->gap_count,
+                      (unsigned)e->timer_count, (unsigned)e->event_count,
                       (long long)(n - e->last_heard_ms),
                       node_is_stale(e, n, REPORT_INTERVAL_MS) ? "true" : "false");
         first = false;
@@ -189,9 +192,10 @@ static int cmd_nodes(int argc, char **argv)
     for (int i = 0; i < NODE_MAX; i++) {
         const node_entry_t *e = &t.nodes[i];
         if (!e->used) { continue; }
-        printf("NODES|%s temp_c=%.2f valid=%d seq=%u rx=%u gaps=%u age_ms=%lld stale=%d\n",
+        printf("NODES|%s temp_c=%.2f valid=%d seq=%u rx=%u gaps=%u timer=%u event=%u age_ms=%lld stale=%d\n",
                e->id, e->temp_c, e->temp_valid, (unsigned)e->node_seq,
                (unsigned)e->rx_count, (unsigned)e->gap_count,
+               (unsigned)e->timer_count, (unsigned)e->event_count,
                (long long)(n - e->last_heard_ms),
                node_is_stale(e, n, REPORT_INTERVAL_MS));
     }

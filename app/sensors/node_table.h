@@ -54,6 +54,13 @@ typedef struct {
     int64_t  last_heard_ms;     /* OUR clock at arrival — never the node's (§2.4) */
     uint32_t rx_count;          /* readings accepted from this node */
     uint32_t gap_count;         /* seq jumps > 1: readings that never arrived */
+
+    /* Which path the reading arrived by. DIAGNOSTICS ONLY — the reading itself
+     * is stored identically either way (§2.4: absolute state). If the hub ever
+     * treats a threshold post differently from a timer post, a lost event
+     * becomes a different KIND of gap, and the two stop being comparable. */
+    uint32_t timer_count;
+    uint32_t event_count;
 } node_entry_t;
 
 typedef struct {
@@ -68,7 +75,8 @@ void node_table_init(void);
 /* Called by the receive path. Absolute state in, nothing accumulated.
  * Returns false only if the reading could not be stored at all. */
 bool node_table_report(const char *id, float temp_c, bool temp_valid,
-                       uint32_t seq, uint32_t node_uptime_ms, int64_t now_ms);
+                       uint32_t seq, uint32_t node_uptime_ms, int64_t now_ms,
+                       bool by_threshold);
 
 /* Reader side of the seam. Never blocks the writer; retries on a torn read. */
 void node_table_snapshot(node_table_t *out);

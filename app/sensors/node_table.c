@@ -34,7 +34,8 @@ static node_entry_t *find_or_claim(const char *id)
 }
 
 bool node_table_report(const char *id, float temp_c, bool temp_valid,
-                       uint32_t seq, uint32_t node_uptime_ms, int64_t now_ms)
+                       uint32_t seq, uint32_t node_uptime_ms, int64_t now_ms,
+                       bool by_threshold)
 {
     if (!id || !id[0]) { s_tab.total_reject++; return false; }
 
@@ -63,6 +64,7 @@ bool node_table_report(const char *id, float temp_c, bool temp_valid,
     n->node_uptime_ms = node_uptime_ms;
     n->last_heard_ms  = now_ms;
     n->rx_count++;
+    if (by_threshold) { n->event_count++; } else { n->timer_count++; }
     s_tab.total_rx++;
     write_end();
     return true;
